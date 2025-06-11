@@ -14,8 +14,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -85,6 +86,31 @@ public class MessageController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/chats")
+    public ResponseEntity<?> getOpenChats() {
+        // Get authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+
+        // Find user in DB
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Get chat partners
+        List<User> chatPartners = messageRepository.findChatPartners(currentUser.getId());
+
+        // Convert to DTOs
+        List<Map<String, Object>> response = chatPartners.stream().map(user -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("userId", user.getId());
+            map.put("username", user.getUsername());
+            return map;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
 
 }
 
