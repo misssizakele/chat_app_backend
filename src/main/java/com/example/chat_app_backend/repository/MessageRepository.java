@@ -1,6 +1,7 @@
 package com.example.chat_app_backend.repository;
 
 import com.example.chat_app_backend.entity.Message;
+import com.example.chat_app_backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,6 +19,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             "ORDER BY m.timestamp ASC")
     List<Message> findConversationBetweenUsers(@Param("userId1") Long userId1,
                                                @Param("userId2") Long userId2);
+
+    @Query("SELECT DISTINCT CASE WHEN m.sender.id = :userId THEN m.recipient ELSE m.sender END " +
+            "FROM Message m WHERE m.sender.id = :userId OR m.recipient.id = :userId")
+    List<User> findChatPartners(@Param("userId") Long userId);
+
 
 }
 

@@ -5,17 +5,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -37,7 +34,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String jwtToken = null;
         String email = null;
 
-        // Extracting the token from "Authorization: Bearer <token>"
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwtToken = authHeader.substring(7);
             try {
@@ -47,20 +43,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // Authenticate if email is extracted and not already authenticated
+        System.out.println("GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG");
+        System.out.println("Token: " + jwtToken);
+        System.out.println("Extracted email: " + email);
+        System.out.println("Authentication: " + SecurityContextHolder.getContext().getAuthentication());
+
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            if (userDetails != null) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
-                //authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            if (jwtUtil.validateToken(jwtToken, userDetails)) {
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                System.out.println("User authenticated: " + userDetails.getUsername());
+            } else {
+                System.out.println("Token validation failed");
             }
         }
+
 
         filterChain.doFilter(request, response);
     }
 }
-

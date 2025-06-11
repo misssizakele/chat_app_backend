@@ -11,7 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
+import com.example.chat_app_backend.service.CustomUserDetailsService;
+import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Optional;
 
 @RestController
@@ -29,6 +30,9 @@ public class AuthController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CustomUserDetailsService customUserDetailsService;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
@@ -55,8 +59,12 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail());
+        // ✅ Load UserDetails and generate token
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(user.getEmail());
+        String token = jwtUtil.generateToken(userDetails);
+
         return ResponseEntity.ok(new JwtResponse(token));
     }
+
 
 }
